@@ -12,7 +12,7 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
     rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=15" />
+  <link rel="stylesheet" href="style.css?v=20" />
 </head>
 
 <body>
@@ -58,6 +58,12 @@
       <span class="total-value-bar" id="totalValue">Rp 0</span>
     </div>
     <div class="project-actions">
+      <button class="btn btn-ghost" id="btnAddModule">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+        </svg>
+        Tambah Pekerjaan
+      </button>
       <button class="btn btn-ghost" id="btnExport">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
           <path d="M2 10v2h10v-2M7 1v8M4 6l3 3 3-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
@@ -138,10 +144,44 @@
     </div>
   </div>
 
+  <!-- ── MODAL TAMBAH PEKERJAAN ── -->
+  <div class="add-module-overlay" id="addModuleModal">
+    <div class="add-module-dialog">
+      <div class="add-module-header">
+        <h3>Tambah Pekerjaan Baru</h3>
+        <button class="btn-modal-close" id="btnCloseAddModule" title="Tutup">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+          </svg>
+        </button>
+      </div>
+      <div class="add-module-body">
+        <label class="add-mod-label" for="inputModuleName">Nama Pekerjaan</label>
+        <input
+          type="text"
+          id="inputModuleName"
+          class="add-mod-input"
+          placeholder="cth. Pekerjaan Instalasi Listrik"
+          maxlength="80"
+          autocomplete="off"
+        />
+      </div>
+      <div class="add-module-footer">
+        <button class="btn btn-ghost" id="btnCancelAddModule">Batal</button>
+        <button class="btn btn-primary" id="btnConfirmAddModule">
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+            <path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+          </svg>
+          Tambah
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ── TOAST NOTIFICATION ── -->
   <div class="toast-container" id="toastContainer"></div>
 
-  <script type="module" src="app.js?v=15"></script>
+  <script type="module" src="app.js?v=20"></script>
 </body>
 
 </html>

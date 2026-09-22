@@ -1,18 +1,24 @@
 'use strict';
 
+// Strict mode membantu JavaScript mendeteksi kesalahan penggunaan variabel.
+
 // ══════════════════════════════════════════════
 // KONEKSI REALTIME — WebSocket ke server PHP
 // ══════════════════════════════════════════════
+// const dipakai untuk nilai konfigurasi yang tidak perlu diganti.
 const configuredWsUrl = window.RAB_WS_URL || new URLSearchParams(location.search).get('ws');
+// Template string memilih ws atau wss sesuai protokol halaman yang sedang dibuka.
 const WS_URL = configuredWsUrl || `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.hostname}:8080`;
 const PROJECT_ID = new URLSearchParams(location.search).get('project') || 'default';
 
+// let dipakai untuk nilai yang akan berubah selama aplikasi berjalan.
 let ws = null;
 
 // ─────────────────────────────────────────────
 // MODUL PRE-DEFINED — 8 modul RAB standar konstruksi
 // Dibuat otomatis saat pertama kali project dibuka
 // ─────────────────────────────────────────────
+// Array [] menyimpan daftar object {} yang mewakili modul bawaan.
 const PREDEFINED_MODULES = [
   { name: 'Pekerjaan Persiapan',  paletteIdx: 0 },
   { name: 'Pekerjaan Pondasi',    paletteIdx: 1 },
@@ -34,6 +40,7 @@ const myColor = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart
 const myName  = prompt('Masukan nama anda') || 'User';
 
 // STATE
+// State adalah data sementara yang menjadi sumber tampilan aplikasi.
 let tableData    = [];  // Semua baris + module headers (_type:'moduleHeader')
 let activeLocks  = {};  // Sel yang sedang diedit
 let remoteEditors = {};
@@ -75,20 +82,46 @@ const modalTotal      = document.getElementById('modalTotal');
 const modalIcon       = document.getElementById('modalIcon');
 const btnUndo         = document.getElementById('btnUndo');
 
+// DOM refs modal tambah pekerjaan
+const addModuleModal      = document.getElementById('addModuleModal');
+const btnAddModule        = document.getElementById('btnAddModule');
+const btnCloseAddModule   = document.getElementById('btnCloseAddModule');
+const btnCancelAddModule  = document.getElementById('btnCancelAddModule');
+const btnConfirmAddModule = document.getElementById('btnConfirmAddModule');
+const inputModuleName     = document.getElementById('inputModuleName');
+
 // ─────────────────────────────────────────────
 // INISIALISASI
 // ─────────────────────────────────────────────
+// IIFE langsung menjalankan inisialisasi tanpa menunggu pemanggilan manual.
 (function init() {
   userAvatarBadge.style.background = myColor;
   userAvatarBadge.textContent = myName.charAt(0);
   userAvatarBadge.title = myName;
 
+  // Event listener menghubungkan aksi user dengan function aplikasi.
   document.getElementById('btnExport').addEventListener('click', exportCSV);
   btnUndo.addEventListener('click', undoLastEdit);
   document.getElementById('btnCloseModal').addEventListener('click', closeModuleModal);
   document.getElementById('modalBtnAddRow').addEventListener('click', () => {
     if (openModuleId) addNewRow(openModuleId);
   });
+
+  if (btnAddModule) btnAddModule.addEventListener('click', openAddModuleModal);
+  if (btnCloseAddModule) btnCloseAddModule.addEventListener('click', closeAddModuleModal);
+  if (btnCancelAddModule) btnCancelAddModule.addEventListener('click', closeAddModuleModal);
+  if (btnConfirmAddModule) btnConfirmAddModule.addEventListener('click', confirmAddModule);
+  if (inputModuleName) {
+    inputModuleName.addEventListener('keydown', e => {
+      if (e.key === 'Enter') confirmAddModule();
+      if (e.key === 'Escape') closeAddModuleModal();
+    });
+  }
+  if (addModuleModal) {
+    addModuleModal.addEventListener('click', e => {
+      if (e.target === addModuleModal) closeAddModuleModal();
+    });
+  }
 
   // Tutup modal saat klik overlay (di luar modal box)
   moduleModal.addEventListener('click', e => {
@@ -97,7 +130,13 @@ const btnUndo         = document.getElementById('btnUndo');
 
   // Escape tutup modal
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && openModuleId) closeModuleModal();
+    if (e.key === 'Escape') {
+      if (addModuleModal && addModuleModal.classList.contains('open')) {
+        closeAddModuleModal();
+      } else if (openModuleId) {
+        closeModuleModal();
+      }
+    }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && openModuleId) {
       e.preventDefault();
       undoLastEdit();
@@ -132,11 +171,13 @@ const btnUndo         = document.getElementById('btnUndo');
 // WEBSOCKET
 // ─────────────────────────────────────────────
 function connectWS() {
+  // WebSocket membuka koneksi realtime ke server PHP Ratchet.
   ws = new WebSocket(WS_URL);
 
   ws.onopen = () => {
     wsReconnectDelay = 1000;
     setSyncState('ok');
+    // JSON.stringify mengubah object JavaScript menjadi teks JSON untuk dikirim.
     ws.send(JSON.stringify({ type: 'join', projectId: PROJECT_ID, userId: myId }));
     sendHeartbeat();
     if (window.__heartbeatInterval) clearInterval(window.__heartbeatInterval);
@@ -144,6 +185,7 @@ function connectWS() {
   };
 
   ws.onmessage = (event) => {
+    // JSON.parse mengubah teks JSON dari server menjadi object JavaScript.
     const msg = JSON.parse(event.data);
 
     if (msg.type === 'state') {
@@ -319,6 +361,7 @@ function getModuleHeaders() {
 }
 
 function getModuleRows(moduleId) {
+  // filter() menghasilkan array baru yang hanya berisi baris modul tertentu.
   return tableData.filter(r => !r._type && r.moduleId === moduleId);
 }
 
@@ -357,7 +400,65 @@ function getModulePalette(header) {
 }
 
 /* ════════════════════════════════════════════
-   RENDER MODULES — kartu kompak di grid
+   TAMBAH PEKERJAAN MODAL FUNCTIONS
+   ════════════════════════════════════════════ */
+
+function openAddModuleModal() {
+  if (!addModuleModal) return;
+  if (inputModuleName) inputModuleName.value = '';
+  addModuleModal.classList.add('open');
+  if (inputModuleName) setTimeout(() => inputModuleName.focus(), 100);
+}
+
+function closeAddModuleModal() {
+  if (!addModuleModal) return;
+  addModuleModal.classList.remove('open');
+}
+
+function confirmAddModule() {
+  if (!inputModuleName) return;
+  const name = inputModuleName.value.trim();
+  if (!name) {
+    showToast('Nama pekerjaan tidak boleh kosong', 'warn');
+    inputModuleName.focus();
+    return;
+  }
+
+  const moduleId = `mod_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+  const headers = getModuleHeaders();
+  const paletteIdx = headers.length % MODULE_PALETTES.length;
+
+  const newHeader = {
+    id: `__${moduleId}`,
+    _type: 'moduleHeader',
+    moduleId: moduleId,
+    name: name,
+    paletteIdx: paletteIdx,
+  };
+
+  const newRow = {
+    id: `row_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+    moduleId: moduleId,
+    uraian: 'Bahan Utama',
+    volume: 1,
+    satuan: 'ls',
+    harga_satuan: 0,
+    jumlah: 0,
+    keterangan: '',
+  };
+
+  tableData.push(newHeader, newRow);
+  saveToStorage({ userId: myId, name: myName });
+  wsSend({ type: 'action', text: `${myName} menambahkan pekerjaan ${name}` });
+
+  renderModules();
+  updateTotal();
+  closeAddModuleModal();
+  showToast(`Pekerjaan "${name}" berhasil ditambahkan`, 'success');
+}
+
+/* ════════════════════════════════════════════
+   RENDER MODULES — tabel utama
    ════════════════════════════════════════════ */
 
 function renderModules() {
@@ -366,78 +467,113 @@ function renderModules() {
   tableLoading.style.display = 'none';
 
   const headers = getModuleHeaders();
+
+  // Buat struktur tabel
+  const table = document.createElement('table');
+  table.className = 'modules-main-table';
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th class="col-center" style="width:48px">No.</th>
+        <th>Nama Pekerjaan</th>
+        <th class="col-center">Jumlah Bahan</th>
+        <th class="col-right">Total Biaya</th>
+        <th class="col-center">Status</th>
+        <th class="col-right" style="padding-right:20px">Aksi</th>
+      </tr>
+    </thead>`;
+  const tbody = document.createElement('tbody');
+  table.appendChild(tbody);
+
   headers.forEach((header, idx) => {
     if (header.paletteIdx === undefined) header.paletteIdx = idx;
-    modulesGrid.appendChild(createModuleCard(header));
+    // Baris broker (tersembunyi, muncul jika ada lock)
+    const brokerTr = document.createElement('tr');
+    brokerTr.className = 'module-broker-row';
+    brokerTr.dataset.moduleBrokerRow = header.moduleId;
+    brokerTr.style.display = 'none';
+    const brokerTd = document.createElement('td');
+    brokerTd.colSpan = 6;
+    brokerTr.appendChild(brokerTd);
+    tbody.appendChild(brokerTr);
+
+    // Baris data modul
+    tbody.appendChild(createModuleCard(header, idx + 1));
   });
+
+  modulesGrid.appendChild(table);
+  syncAllModuleBrokers();
 }
 
 // ─────────────────────────────────────────────
-// Buat kartu kompak untuk 1 modul (tampilan grid)
-// Tidak ada tabel di dalam — tabel ada di modal
+// Buat BARIS TABEL untuk 1 modul (tampilan tabel utama)
+// Klik baris / tombol Edit → buka modal (logika tidak berubah)
 // ─────────────────────────────────────────────
-function createModuleCard(header) {
+function createModuleCard(header, rowNo) {
   const moduleId = header.moduleId;
   const palette  = getModulePalette(header);
   const rows     = getModuleRows(moduleId);
   const total    = rows.reduce((s, r) => s + (r.jumlah || 0), 0);
+  const hasData  = rows.length > 0;
 
-  // Wrapper (broker banner disisipkan sebelum .module-card)
-  const wrapper = document.createElement('div');
-  wrapper.className = 'module-card-wrapper';
-  wrapper.dataset.moduleCard = moduleId;
+  const tr = document.createElement('tr');
+  tr.className = 'module-row';
+  tr.dataset.moduleCard = moduleId;
 
-  // Kartu
-  const card = document.createElement('div');
-  card.className = 'module-card';
-  card.addEventListener('click', e => {
-    // Klik di mana saja di kartu → buka modal
-    if (!e.target.closest('.btn-card-del')) openModuleModal(moduleId);
-  });
+  // ── Col 1: No ──
+  const tdNo = document.createElement('td');
+  tdNo.className = 'col-mod-no';
+  tdNo.textContent = rowNo ?? '';
 
-  // ── Bagian atas: banner warna-warni (seperti foto di gambar) ──
-  const thumb = document.createElement('div');
-  thumb.className = 'module-card-thumb';
-  thumb.style.backgroundColor = palette.bg;
-  thumb.style.backgroundImage = `linear-gradient(180deg, rgba(6, 20, 27, .08), rgba(6, 20, 27, .72)), url("${palette.image}")`;
+  // ── Col 2: Nama Pekerjaan (ikon + nama) ──
+  const tdName = document.createElement('td');
+  tdName.className = 'col-mod-name';
+  const nameCell = document.createElement('div');
+  nameCell.className = 'mod-name-cell';
+  const iconThumb = document.createElement('div');
+  iconThumb.className = 'mod-icon-thumb';
+  iconThumb.style.backgroundColor = palette.bg;
+  iconThumb.style.backgroundImage = `linear-gradient(135deg, rgba(6,20,27,.1), rgba(6,20,27,.55)), url("${palette.image}")`;
+  iconThumb.innerHTML = palette.icon;
+  const nameText = document.createElement('span');
+  nameText.className = 'mod-name-text';
+  nameText.textContent = header.name;
+  nameCell.appendChild(iconThumb);
+  nameCell.appendChild(nameText);
+  tdName.appendChild(nameCell);
 
-  const thumbIcon = document.createElement('div');
-  thumbIcon.className = 'module-thumb-icon';
-  thumbIcon.innerHTML = palette.icon;
+  // ── Col 3: Jumlah Bahan ──
+  const tdCount = document.createElement('td');
+  tdCount.className = 'col-mod-count';
+  const badge = document.createElement('span');
+  badge.className = 'mod-badge';
+  badge.dataset.cardRowcount = moduleId;
+  badge.textContent = `${rows.length} bahan`;
+  tdCount.appendChild(badge);
 
-  thumb.appendChild(thumbIcon);
+  // ── Col 4: Total Biaya ──
+  const tdTotal = document.createElement('td');
+  tdTotal.className = 'col-mod-total';
+  const totalSpan = document.createElement('span');
+  totalSpan.className = 'mod-total-val';
+  totalSpan.dataset.cardTotal = moduleId;
+  totalSpan.textContent = formatCurrency(total);
+  tdTotal.appendChild(totalSpan);
 
-  // ── Body: nama modul + baris info ──
-  const body = document.createElement('div');
-  body.className = 'module-card-body';
+  // ── Col 5: Status ──
+  const tdStatus = document.createElement('td');
+  tdStatus.className = 'col-mod-status';
+  const statusBadge = document.createElement('span');
+  statusBadge.className = `mod-status-badge ${hasData ? 'has-data' : 'empty'}`;
+  statusBadge.dataset.cardStatus = moduleId;
+  statusBadge.textContent = hasData ? 'Ada Data' : 'Kosong';
+  tdStatus.appendChild(statusBadge);
 
-  const title = document.createElement('h3');
-  title.className = 'module-card-title';
-  title.textContent = header.name;
-
-  // Info rows (seperti "Jenis — Rumah" di gambar)
-  const infoRows = [
-    { label: 'Jumlah Bahan yang Dibutuhkan', value: `${rows.length} bahan`, attr: `data-card-rowcount="${moduleId}"` },
-    { label: 'Total Biaya',   value: formatCurrency(total),  attr: `data-card-total="${moduleId}"` },
-    { label: 'Status',        value: rows.length === 0 ? 'Kosong' : 'Ada Data', attr: '' },
-  ];
-
-  body.appendChild(title);
-  infoRows.forEach(info => {
-    const row = document.createElement('div');
-    row.className = 'module-info-row';
-    row.innerHTML = `
-      <span class="module-info-label">${info.label}</span>
-      <span class="module-info-value" ${info.attr}>${info.value}</span>`;
-    body.appendChild(row);
-  });
-
-  // ── Actions: tombol Edit + Hapus ──
-  const actions = document.createElement('div');
-  actions.className = 'module-card-actions';
-
+  // ── Col 6: Aksi ──
+  const tdAction = document.createElement('td');
+  tdAction.className = 'col-mod-action';
   const btnEdit = document.createElement('button');
-  btnEdit.className = 'btn-card-edit';
+  btnEdit.className = 'btn-mod-edit';
   btnEdit.dataset.moduleEditBtn = moduleId;
   btnEdit.innerHTML = `<svg width="12" height="12" viewBox="0 0 14 14" fill="none">
     <path d="M9.5 1.5l3 3-8 8H1.5v-3l8-8z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
@@ -446,26 +582,34 @@ function createModuleCard(header) {
     e.stopPropagation();
     openModuleModal(moduleId);
   });
+  tdAction.appendChild(btnEdit);
 
-  actions.appendChild(btnEdit);
+  tr.appendChild(tdNo);
+  tr.appendChild(tdName);
+  tr.appendChild(tdCount);
+  tr.appendChild(tdTotal);
+  tr.appendChild(tdStatus);
+  tr.appendChild(tdAction);
 
-  card.appendChild(thumb);
-  card.appendChild(body);
-  card.appendChild(actions);
-  wrapper.appendChild(card);
-
-  return wrapper;
+  return tr;
 }
 
-// Update info di kartu (rowcount + total) tanpa rebuild
+// Update info di baris tabel (rowcount + total + status) tanpa rebuild
 function updateCardInfo(moduleId) {
-  const rows  = getModuleRows(moduleId);
-  const total = rows.reduce((s, r) => s + (r.jumlah || 0), 0);
+  const rows    = getModuleRows(moduleId);
+  const total   = rows.reduce((s, r) => s + (r.jumlah || 0), 0);
+  const hasData = rows.length > 0;
 
-  const countEl = document.querySelector(`[data-card-rowcount="${moduleId}"]`);
-  const totalEl = document.querySelector(`[data-card-total="${moduleId}"]`);
+  const countEl  = document.querySelector(`[data-card-rowcount="${moduleId}"]`);
+  const totalEl  = document.querySelector(`[data-card-total="${moduleId}"]`);
+  const statusEl = document.querySelector(`[data-card-status="${moduleId}"]`);
+
   if (countEl) countEl.textContent = `${rows.length} bahan`;
   if (totalEl) totalEl.textContent = formatCurrency(total);
+  if (statusEl) {
+    statusEl.textContent = hasData ? 'Ada Data' : 'Kosong';
+    statusEl.className = `mod-status-badge ${hasData ? 'has-data' : 'empty'}`;
+  }
 }
 
 /* ════════════════════════════════════════════
@@ -753,6 +897,7 @@ function onCellKeydown(e) {
    ════════════════════════════════════════════ */
 
 function saveCell(cell) {
+  // Membaca nilai dari DOM, memperbarui state, lalu mengirim perubahan ke server.
   const itemId = parseInt(cell.dataset.itemId);
   const field  = cell.dataset.field;
   let rawValue = cell.textContent.trim();
@@ -775,6 +920,7 @@ function saveCell(cell) {
     patch.jumlah = vol * hsat;
   }
 
+  // Object.assign menggabungkan property patch ke object item.
   Object.assign(item, patch);
   undoStack.push({
     itemId,
@@ -978,6 +1124,7 @@ function updateComputedJumlah(editedCell) {
 }
 
 function updateTotal() {
+  // reduce() menjumlahkan seluruh nilai jumlah dari baris bahan.
   const total = tableData.filter(r => !r._type).reduce((s, i) => s + (i.jumlah || 0), 0);
   if (totalValueEl) totalValueEl.textContent = formatCurrency(total);
 }
@@ -1061,6 +1208,7 @@ function showToast(msg, type = 'info') {
 }
 
 function exportCSV() {
+  // Blob membuat file sementara di browser tanpa upload ke server.
   const modMap = {};
   getModuleHeaders().forEach(h => { modMap[h.moduleId] = h.name; });
 
@@ -1157,20 +1305,21 @@ function syncAllModuleBrokers() {
 }
 
 // ─────────────────────────────────────────────
-// Tampilkan broker banner DI ATAS kartu (di luar .module-card)
+// Tampilkan broker banner di baris tabel atas modul
 // ─────────────────────────────────────────────
 function showModuleBroker(moduleId, userInfo) {
-  const wrapper = document.querySelector(`[data-module-card="${moduleId}"]`);
-  if (!wrapper) return;
+  const brokerRow = document.querySelector(`[data-module-broker-row="${moduleId}"]`);
+  if (!brokerRow) return;
+  brokerRow.style.display = '';
+  const td = brokerRow.querySelector('td');
+  if (!td) return;
 
-  let banner = wrapper.querySelector('.module-broker-banner');
+  let banner = td.querySelector('.module-broker-banner');
   if (!banner) {
     banner = document.createElement('div');
     banner.className = 'module-broker-banner';
-    // Sisipkan SEBELUM .module-card → tampil di atas kartu, di luar
-    wrapper.insertBefore(banner, wrapper.firstChild);
+    td.appendChild(banner);
   } else {
-    // Reset kelas jika sebelumnya banner completed
     banner.className = 'module-broker-banner';
   }
 
@@ -1184,7 +1333,6 @@ function showModuleBroker(moduleId, userInfo) {
     <span class="broker-pulse"></span>
   `;
 
-  // Force reflow agar animasi re-trigger
   banner.classList.remove('visible');
   void banner.offsetWidth;
   banner.classList.add('visible');
@@ -1195,15 +1343,18 @@ function showModuleBroker(moduleId, userInfo) {
 // Tidak hilang otomatis sampai user mengeklik tombol Oke
 // ─────────────────────────────────────────────
 function showModuleCompletedBroker(moduleId, userInfo, editedParts = []) {
-  const wrapper = document.querySelector(`[data-module-card="${moduleId}"]`);
-  if (!wrapper) return;
+  const brokerRow = document.querySelector(`[data-module-broker-row="${moduleId}"]`);
+  if (!brokerRow) return;
+  brokerRow.style.display = '';
+  const td = brokerRow.querySelector('td');
+  if (!td) return;
 
-  let banner = wrapper.querySelector('.module-broker-banner');
+  let banner = td.querySelector('.module-broker-banner');
   if (banner) banner.remove();
 
   banner = document.createElement('div');
   banner.className = 'module-broker-banner completed';
-  wrapper.insertBefore(banner, wrapper.firstChild);
+  td.appendChild(banner);
 
   const shortLabels = {
     'Nama Bahan': 'Nama',
@@ -1241,7 +1392,10 @@ function showModuleCompletedBroker(moduleId, userInfo, editedParts = []) {
     btnOk.addEventListener('click', (e) => {
       e.stopPropagation();
       banner.classList.remove('visible');
-      setTimeout(() => banner.remove(), 350);
+      setTimeout(() => {
+        banner.remove();
+        brokerRow.style.display = 'none';
+      }, 350);
     });
   }
 
@@ -1255,12 +1409,30 @@ function showModuleCompletedBroker(moduleId, userInfo, editedParts = []) {
 // (Tetap tampilkan jika banner dalam kondisi 'completed' sampai tombol Oke diklik)
 // ─────────────────────────────────────────────
 function hideModuleBroker(moduleId) {
-  const wrapper = document.querySelector(`[data-module-card="${moduleId}"]`);
-  if (!wrapper) return;
-  const banner = wrapper.querySelector('.module-broker-banner');
-  if (!banner) return;
+  const brokerRow = document.querySelector(`[data-module-broker-row="${moduleId}"]`);
+  if (!brokerRow) return;
+  const banner = brokerRow.querySelector('.module-broker-banner');
+  if (!banner) {
+    brokerRow.style.display = 'none';
+    return;
+  }
+  // Jika sudah ada banner 'completed', jangan sembunyikan
   if (banner.classList.contains('completed')) return;
 
   banner.classList.remove('visible');
-  setTimeout(() => banner.remove(), 350);
+  setTimeout(() => {
+    // Cek lagi: mungkin showModuleCompletedBroker sudah menambahkan banner baru
+    // selama 350ms animasi berjalan
+    const currentBanner = brokerRow.querySelector('.module-broker-banner');
+    if (currentBanner && currentBanner.classList.contains('completed')) {
+      // Ada banner selesai edit baru — jangan sembunyikan baris
+      return;
+    }
+    // Aman untuk hapus banner lama dan sembunyikan baris
+    if (banner.isConnected) banner.remove();
+    // Hanya sembunyikan baris jika tidak ada banner lain
+    if (!brokerRow.querySelector('.module-broker-banner')) {
+      brokerRow.style.display = 'none';
+    }
+  }, 350);
 }

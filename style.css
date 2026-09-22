@@ -834,12 +834,63 @@ body {
    RESPONSIVE
    ═══════════════════════════════════════════ */
 @media (max-width: 768px) {
+  /* Header */
   .app-header { padding: 0 16px; }
-  .table-container { padding: 12px 12px 80px; }
-  .project-bar { padding: 10px 16px; }
-  .col-ket { display: none; }
   .header-sub { display: none; }
   .typing-legend { display: none; }
+
+  /* Project bar */
+  .project-bar { padding: 10px 16px; flex-wrap: wrap; gap: 8px; }
+  .project-bar-center { padding: 5px 12px; }
+  .total-value-bar { font-size: .82rem; }
+
+  /* Modal table */
+  .table-container { padding: 12px 12px 80px; }
+  .col-ket { display: none; }
+
+  /* Modules container */
+  .modules-container { padding: 16px 12px 60px; }
+
+  /* Sembunyikan kolom No. dan Status di layar kecil */
+  .modules-main-table thead th:first-child,
+  .module-row td:first-child,
+  .modules-main-table thead th:nth-child(5),
+  .module-row td:nth-child(5) { display: none; }
+
+  /* Kurangi padding sel */
+  .module-row td { padding: 12px 10px; }
+
+  /* Ikon lebih kecil */
+  .mod-icon-thumb { width: 34px; height: 34px; border-radius: 8px; }
+  .mod-icon-thumb svg { width: 16px; height: 16px; }
+  .mod-name-text { font-size: .8rem; }
+
+  /* Badge & nilai */
+  .mod-badge { font-size: .68rem; padding: 3px 8px; }
+  .mod-total-val { font-size: .8rem; }
+
+  /* Kolom total biaya: align left di mobile biar muat */
+  .module-row .col-mod-total { text-align: left; }
+  .modules-main-table thead th.col-right { text-align: left; }
+
+  /* Tombol Edit lebih ringkas */
+  .btn-mod-edit { padding: 6px 10px; font-size: .72rem; gap: 4px; }
+  .btn-mod-edit svg { display: none; }
+
+  /* Kolom aksi tidak terlalu lebar */
+  .module-row .col-mod-action { width: auto; padding-right: 10px; }
+}
+
+@media (max-width: 480px) {
+  /* Layar sangat kecil: tambahkan horizontal scroll sebagai fallback */
+  .modules-grid { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .modules-main-table { min-width: 380px; }
+
+  /* Sembunyikan juga kolom jumlah bahan */
+  .modules-main-table thead th:nth-child(3),
+  .module-row td:nth-child(3) { display: none; }
+
+  .project-bar-center { display: none; }
 }
 
 /* ═══════════════════════════════════════════
@@ -876,17 +927,253 @@ body {
 }
 
 /* ═══════════════════════════════════════════
-   MODULES CONTAINER & GRID
+   MODULES CONTAINER & TABLE
    ═══════════════════════════════════════════ */
 .modules-container {
   padding: 28px 28px 80px;
 }
 
-/* Grid kartu — mirip gambar referensi */
+/* Wrapper tabel modul utama */
 .modules-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 24px;
+  display: block;
+  background: var(--bg-surface);
+  border-radius: 16px;
+  box-shadow: var(--shadow-md);
+  border: 1.5px solid var(--border-subtle);
+  overflow: hidden;
+}
+
+/* Tabel modul utama */
+.modules-main-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .85rem;
+}
+
+.modules-main-table thead tr {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-violet));
+  color: #fff;
+}
+
+.modules-main-table thead th {
+  padding: 14px 18px;
+  text-align: left;
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  white-space: nowrap;
+  border: none;
+}
+
+.modules-main-table thead th.col-center {
+  text-align: center;
+}
+
+.modules-main-table thead th.col-right {
+  text-align: right;
+}
+
+/* Baris data modul */
+.module-row {
+  transition: background var(--t-fast);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.module-row:last-child {
+  border-bottom: none;
+}
+
+.module-row:hover {
+  background: var(--bg-hover);
+}
+
+.module-row td {
+  padding: 16px 18px;
+  vertical-align: middle;
+}
+
+/* Kolom No */
+.module-row .col-mod-no {
+  width: 48px;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .75rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* Kolom Nama Pekerjaan — dengan ikon & nama */
+.module-row .col-mod-name {
+  min-width: 220px;
+}
+
+.mod-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mod-icon-thumb {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  position: relative;
+  background-size: cover;
+  background-position: center;
+}
+
+.mod-icon-thumb svg {
+  width: 20px;
+  height: 20px;
+  stroke: #fff;
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,.3));
+}
+
+.mod-icon-thumb::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.28);
+  border-radius: inherit;
+}
+
+.mod-name-text {
+  font-weight: 700;
+  font-size: .88rem;
+  color: var(--text-primary);
+  letter-spacing: .01em;
+  text-transform: uppercase;
+}
+
+/* Kolom jumlah bahan */
+.module-row .col-mod-count {
+  text-align: center;
+  width: 130px;
+}
+
+.mod-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(37,55,69,.1), rgba(74,92,106,.15));
+  border: 1px solid var(--border-subtle);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .75rem;
+  font-weight: 700;
+  color: var(--accent-primary);
+  white-space: nowrap;
+}
+
+/* Kolom total biaya */
+.module-row .col-mod-total {
+  text-align: right;
+  width: 180px;
+}
+
+.mod-total-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .88rem;
+  font-weight: 700;
+  color: var(--accent-green);
+}
+
+/* Kolom status */
+.module-row .col-mod-status {
+  text-align: center;
+  width: 110px;
+}
+
+.mod-status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+}
+
+.mod-status-badge.empty {
+  background: rgba(155,168,171,.15);
+  color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
+}
+
+.mod-status-badge.has-data {
+  background: linear-gradient(135deg, rgba(37,55,69,.12), rgba(74,92,106,.18));
+  color: var(--accent-primary);
+  border: 1px solid rgba(37,55,69,.25);
+}
+
+/* Kolom aksi */
+.module-row .col-mod-action {
+  text-align: right;
+  width: 100px;
+  padding-right: 20px;
+}
+
+/* Tombol Edit di tabel modul */
+.btn-mod-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border-radius: 8px;
+  font-size: .78rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1.5px solid var(--accent-primary);
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-violet));
+  color: #fff;
+  transition: all var(--t-fast) var(--ease-out);
+  font-family: 'Inter', sans-serif;
+  white-space: nowrap;
+}
+
+.btn-mod-edit:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37,55,69,.35);
+}
+
+.btn-mod-edit:active { transform: translateY(0); }
+
+.btn-mod-edit.locked {
+  background: linear-gradient(135deg, #9ca3af, #6b7280);
+  border-color: #9ca3af;
+  cursor: not-allowed;
+  filter: none;
+  transform: none;
+}
+
+/* Baris broker banner di tabel (di atas baris modul) */
+.module-broker-row {
+  padding: 0;
+}
+
+.module-broker-row td {
+  padding: 0 !important;
+}
+
+/* Baris kosong jika loading */
+.mod-loading-row td {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-muted);
+  font-size: .85rem;
 }
 
 /* ═══════════════════════════════════════════
@@ -906,18 +1193,15 @@ body {
 }
 
 /* ═══════════════════════════════════════════
-   BROKER BANNER — DI LUAR / DI ATAS kartu
-   Muncul realtime ketika user lain sedang mengedit modul ini
+   BROKER BANNER — muncul sebagai notifikasi inline di tabel
    ═══════════════════════════════════════════ */
 .module-broker-banner {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 9px 14px;
+  padding: 9px 18px;
   background: linear-gradient(135deg, #fff7ed, #ffedd5);
-  border: 1.5px solid #fb923c;
-  border-bottom: none;
-  border-radius: 12px 12px 0 0;
+  border-bottom: 1.5px solid #fb923c;
   font-size: .78rem;
   color: #9a3412;
 
@@ -941,12 +1225,6 @@ body {
   transform: translateY(0);
   padding-top: 9px;
   padding-bottom: 9px;
-}
-
-/* Kartu langsung di bawah banner: sudut atas hilang */
-.module-card-wrapper:has(.module-broker-banner.visible) .module-card {
-  border-top-color: #fb923c;
-  border-radius: 0 0 14px 14px;
 }
 
 .broker-avatar {
@@ -1805,4 +2083,91 @@ body {
   .module-card-thumb {
     height: 138px;
   }
+}
+
+/* ═══════════════════════════════════════════
+   ADD MODULE MODAL DIALOG
+   ═══════════════════════════════════════════ */
+.add-module-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 600;
+  background: rgba(0, 0, 0, .45);
+  backdrop-filter: blur(4px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeInOverlay .25s var(--ease-out);
+}
+
+.add-module-overlay.open {
+  display: flex;
+}
+
+.add-module-dialog {
+  background: var(--bg-surface);
+  border-radius: 14px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, .25), 0 0 0 1px rgba(255, 255, 255, .1);
+  width: 100%;
+  max-width: 440px;
+  overflow: hidden;
+  animation: modalSlideUp .3s var(--ease-out);
+}
+
+.add-module-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1.5px solid var(--border-subtle);
+  background: linear-gradient(135deg, var(--bg-elevated), #f0fdf4);
+}
+
+.add-module-header h3 {
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.add-module-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.add-mod-label {
+  font-size: .78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.add-mod-input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border-default);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  font-size: .88rem;
+  outline: none;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+}
+
+.add-mod-input:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(37, 55, 69, .15);
+}
+
+.add-module-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
 }

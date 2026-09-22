@@ -10,6 +10,7 @@ use Ratchet\ConnectionInterface;
  */
 class RTserver implements MessageComponentInterface {
 
+    // Property menyimpan koneksi, room project, metadata user, dan state realtime.
     protected $clients;
     protected $rooms = [];   // projectId => SplObjectStorage berisi koneksi
     protected $meta  = [];   // resourceId => ['projectId'=>, 'userId'=>]
@@ -26,11 +27,13 @@ class RTserver implements MessageComponentInterface {
     }
 
     public function onMessage($from, $msg) {
+        // Pesan client selalu diterima sebagai teks, lalu diubah menjadi array PHP.
         $data = json_decode($msg, true);
         if (!is_array($data) || !isset($data['type'])) {
             return;
         }
 
+        // switch memilih handler berdasarkan jenis pesan WebSocket.
         switch ($data['type']) {
             case 'join':
                 $this->handleJoin($from, $data);
@@ -76,6 +79,7 @@ class RTserver implements MessageComponentInterface {
     }
 
     protected function ensureState($projectId) {
+        // State project hanya dimuat dari database sekali selama server berjalan.
         if (!isset($this->state[$projectId])) {
             $stored = $this->database->loadProject($projectId);
             // Simpan data sebagai map id => row untuk O(1) patch per baris
@@ -163,6 +167,7 @@ class RTserver implements MessageComponentInterface {
      * bukan seluruh tabel.
      */
     protected function handleRowUpdate($from, $data) {
+        // Update satu baris menghemat bandwidth dibanding mengirim seluruh tabel.
         $meta = $this->meta[$from->resourceId] ?? null;
         if (!$meta) return;
         $projectId = $meta['projectId'];
@@ -184,6 +189,7 @@ class RTserver implements MessageComponentInterface {
         }
 
         // Broadcast HANYA 1 baris ke klien lain — inilah penghematannya ✅
+        // Broadcast menyebarkan perubahan ke client lain dalam project yang sama.
         $this->broadcastToRoom($projectId, [
             'type'    => 'rowUpdate',
             'payload' => $row,
@@ -274,6 +280,7 @@ class RTserver implements MessageComponentInterface {
     }
 
     protected function broadcastToRoom($projectId, $payload, $exclude = null) {
+        // json_encode mengubah payload PHP menjadi format yang dipahami JavaScript.
         if (!isset($this->rooms[$projectId])) return;
         $message = json_encode($payload);
 
