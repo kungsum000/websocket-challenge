@@ -1704,40 +1704,6 @@ body {
   transform: translateY(0);
 }
 
-/* ── Banner Selesai Edit (Completed) ── */
-.module-broker-banner.completed {
-  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
-  border-color: #34d399;
-  color: #065f46;
-}
-
-.module-broker-banner.completed .broker-text strong {
-  color: #047857;
-}
-
-.btn-broker-ok {
-  padding: 5px 14px;
-  font-size: .75rem;
-  font-weight: 700;
-  color: #ffffff;
-  background: linear-gradient(135deg, #10b981, #059669);
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  box-shadow: 0 2px 6px rgba(16, 185, 129, .28);
-  transition: transform .15s ease, background .15s ease, box-shadow .15s ease;
-  flex-shrink: 0;
-}
-
-.btn-broker-ok:hover {
-  background: linear-gradient(135deg, #059669, #047857);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(16, 185, 129, .4);
-}
-
-.btn-broker-ok:active {
-  transform: translateY(0);
-}
 
 /* Avatar bulat nama user di banner */
 .broker-avatar {
@@ -1785,9 +1751,6 @@ body {
   border-radius: 0 0 12px 12px;
 }
 
-.module-card-wrapper:has(.module-broker-banner.completed.visible) .module-card {
-  border-top-color: #34d399;
-}
 
 /* ═══════════════════════════════════════════
    MODULE CARD — kartu utama

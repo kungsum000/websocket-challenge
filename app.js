@@ -265,15 +265,6 @@ function connectWS() {
         delete remoteEditors[msg.key];
         syncRemoteLocks();
         syncAllModuleBrokers();
-
-        // Jika ini adalah module lock dari user lain, tampilkan banner "Selesai Edit" dengan tombol Oke
-        if (msg.key.startsWith('__module_') && msg.editor && msg.editor.userId !== myId) {
-          const moduleId = msg.editor.moduleId || msg.key.replace('__module_', '');
-          const historyKey = `${msg.editor.userId}_${moduleId}`;
-          const editedParts = remoteEditHistory[historyKey] || [];
-          delete remoteEditHistory[historyKey];
-          showModuleCompletedBroker(moduleId, msg.editor, editedParts);
-        }
       }
       return;
     }
@@ -1339,74 +1330,7 @@ function showModuleBroker(moduleId, userInfo) {
 }
 
 // ─────────────────────────────────────────────
-// Tampilkan banner "Selesai Edit" dengan tombol Oke
-// Tidak hilang otomatis sampai user mengeklik tombol Oke
-// ─────────────────────────────────────────────
-function showModuleCompletedBroker(moduleId, userInfo, editedParts = []) {
-  const brokerRow = document.querySelector(`[data-module-broker-row="${moduleId}"]`);
-  if (!brokerRow) return;
-  brokerRow.style.display = '';
-  const td = brokerRow.querySelector('td');
-  if (!td) return;
-
-  let banner = td.querySelector('.module-broker-banner');
-  if (banner) banner.remove();
-
-  banner = document.createElement('div');
-  banner.className = 'module-broker-banner completed';
-  td.appendChild(banner);
-
-  const shortLabels = {
-    'Nama Bahan': 'Nama',
-    'Harga Satuan': 'Harga',
-    'Keterangan': 'Catatan',
-  };
-  const groupedParts = editedParts.reduce((groups, part) => {
-    const key = String(part.itemNo);
-    const group = groups.find(item => item.itemNo === key);
-    const label = shortLabels[part.fieldLabel] || part.fieldLabel;
-    if (group) {
-      if (!group.fields.includes(label)) group.fields.push(label);
-    } else {
-      groups.push({ itemNo: key, fields: [label] });
-    }
-    return groups;
-  }, []);
-  const editedText = groupedParts.length
-    ? `Diubah: ${groupedParts.slice(0, 3).map(part => `Bahan ${part.itemNo} (${part.fields.join(', ')})`).join('; ')}${groupedParts.length > 3 ? '; lainnya' : ''}`
-    : 'Tidak ada detail bagian';
-
-  banner.innerHTML = `
-    <span class="broker-avatar" style="background:${userInfo.color || '#10b981'}">
-      ${(userInfo.name || '?').charAt(0).toUpperCase()}
-    </span>
-    <div class="broker-text">
-      <strong>${userInfo.name || 'Seseorang'}</strong> telah selesai mengedit modul ini
-      <small>${editedText}</small>
-    </div>
-    <button class="btn-broker-ok">Oke</button>
-  `;
-
-  const btnOk = banner.querySelector('.btn-broker-ok');
-  if (btnOk) {
-    btnOk.addEventListener('click', (e) => {
-      e.stopPropagation();
-      banner.classList.remove('visible');
-      setTimeout(() => {
-        banner.remove();
-        brokerRow.style.display = 'none';
-      }, 350);
-    });
-  }
-
-  banner.classList.remove('visible');
-  void banner.offsetWidth;
-  banner.classList.add('visible');
-}
-
-// ─────────────────────────────────────────────
 // Sembunyikan broker banner ketika modul sudah bebas
-// (Tetap tampilkan jika banner dalam kondisi 'completed' sampai tombol Oke diklik)
 // ─────────────────────────────────────────────
 function hideModuleBroker(moduleId) {
   const brokerRow = document.querySelector(`[data-module-broker-row="${moduleId}"]`);
@@ -1416,21 +1340,10 @@ function hideModuleBroker(moduleId) {
     brokerRow.style.display = 'none';
     return;
   }
-  // Jika sudah ada banner 'completed', jangan sembunyikan
-  if (banner.classList.contains('completed')) return;
 
   banner.classList.remove('visible');
   setTimeout(() => {
-    // Cek lagi: mungkin showModuleCompletedBroker sudah menambahkan banner baru
-    // selama 350ms animasi berjalan
-    const currentBanner = brokerRow.querySelector('.module-broker-banner');
-    if (currentBanner && currentBanner.classList.contains('completed')) {
-      // Ada banner selesai edit baru — jangan sembunyikan baris
-      return;
-    }
-    // Aman untuk hapus banner lama dan sembunyikan baris
     if (banner.isConnected) banner.remove();
-    // Hanya sembunyikan baris jika tidak ada banner lain
     if (!brokerRow.querySelector('.module-broker-banner')) {
       brokerRow.style.display = 'none';
     }
