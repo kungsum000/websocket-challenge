@@ -20,14 +20,14 @@ let ws = null;
 // ─────────────────────────────────────────────
 // Array [] menyimpan daftar object {} yang mewakili modul bawaan.
 const PREDEFINED_MODULES = [
-  { name: 'Pekerjaan Persiapan',  paletteIdx: 0 },
-  { name: 'Pekerjaan Pondasi',    paletteIdx: 1 },
-  { name: 'Pekerjaan Struktur',   paletteIdx: 2 },
-  { name: 'Pekerjaan Dinding',    paletteIdx: 3 },
-  { name: 'Pekerjaan Atap',       paletteIdx: 4 },
-  { name: 'Pekerjaan Lantai',     paletteIdx: 5 },
-  { name: 'Pekerjaan Finishing',  paletteIdx: 6 },
-  { name: 'Pekerjaan MEP',        paletteIdx: 7 },
+  { name: 'Pekerjaan Persiapan', paletteIdx: 0 },
+  { name: 'Pekerjaan Pondasi', paletteIdx: 1 },
+  { name: 'Pekerjaan Struktur', paletteIdx: 2 },
+  { name: 'Pekerjaan Dinding', paletteIdx: 3 },
+  { name: 'Pekerjaan Atap', paletteIdx: 4 },
+  { name: 'Pekerjaan Lantai', paletteIdx: 5 },
+  { name: 'Pekerjaan Finishing', paletteIdx: 6 },
+  { name: 'Pekerjaan MEP', paletteIdx: 7 },
 ];
 let wsReconnectDelay = 1000;
 
@@ -35,16 +35,16 @@ const DEBOUNCE = 80;
 const LOCK_TTL = 3000;
 
 // User ID & Color
-const myId    = 'user_' + Math.random().toString(36).slice(2, 7);
+const myId = 'user_' + Math.random().toString(36).slice(2, 7);
 const myColor = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
-const myName  = prompt('Masukan nama anda') || 'User';
+const myName = prompt('Masukan nama anda') || 'User';
 
 // STATE
 // State adalah data sementara yang menjadi sumber tampilan aplikasi.
-let tableData    = [];  // Semua baris + module headers (_type:'moduleHeader')
-let activeLocks  = {};  // Sel yang sedang diedit
+let tableData = [];  // Semua baris + module headers (_type:'moduleHeader')
+let activeLocks = {};  // Sel yang sedang diedit
 let remoteEditors = {};
-let debounceMap  = {};
+let debounceMap = {};
 let editDirtyMap = {};
 let presenceData = {};
 const remoteEditHistory = {};
@@ -67,28 +67,28 @@ const MODULE_PALETTES = [
 ];
 
 // DOM refs
-const modulesGrid     = document.getElementById('modulesGrid');
-const tableLoading    = document.getElementById('tableLoading');
-const totalValueEl    = document.getElementById('totalValue');
-const syncDot         = document.getElementById('syncDot');
-const syncText        = document.getElementById('syncText');
-const toastCont       = document.getElementById('toastContainer');
+const modulesGrid = document.getElementById('modulesGrid');
+const tableLoading = document.getElementById('tableLoading');
+const totalValueEl = document.getElementById('totalValue');
+const syncDot = document.getElementById('syncDot');
+const syncText = document.getElementById('syncText');
+const toastCont = document.getElementById('toastContainer');
 const userAvatarBadge = document.getElementById('userAvatarBadge');
-const moduleModal     = document.getElementById('moduleModal');
-const modalTableBody  = document.getElementById('modalTableBody');
+const moduleModal = document.getElementById('moduleModal');
+const modalTableBody = document.getElementById('modalTableBody');
 const modalModuleName = document.getElementById('modalModuleName');
 const modalModuleMeta = document.getElementById('modalModuleMeta');
-const modalTotal      = document.getElementById('modalTotal');
-const modalIcon       = document.getElementById('modalIcon');
-const btnUndo         = document.getElementById('btnUndo');
+const modalTotal = document.getElementById('modalTotal');
+const modalIcon = document.getElementById('modalIcon');
+const btnUndo = document.getElementById('btnUndo');
 
 // DOM refs modal tambah pekerjaan
-const addModuleModal      = document.getElementById('addModuleModal');
-const btnAddModule        = document.getElementById('btnAddModule');
-const btnCloseAddModule   = document.getElementById('btnCloseAddModule');
-const btnCancelAddModule  = document.getElementById('btnCancelAddModule');
+const addModuleModal = document.getElementById('addModuleModal');
+const btnAddModule = document.getElementById('btnAddModule');
+const btnCloseAddModule = document.getElementById('btnCloseAddModule');
+const btnCancelAddModule = document.getElementById('btnCancelAddModule');
 const btnConfirmAddModule = document.getElementById('btnConfirmAddModule');
-const inputModuleName     = document.getElementById('inputModuleName');
+const inputModuleName = document.getElementById('inputModuleName');
 
 // ─────────────────────────────────────────────
 // INISIALISASI
@@ -189,8 +189,8 @@ function connectWS() {
     const msg = JSON.parse(event.data);
 
     if (msg.type === 'state') {
-      tableData    = msg.data || [];
-      activeLocks  = msg.locks || {};
+      tableData = msg.data || [];
+      activeLocks = msg.locks || {};
       remoteEditors = {};
       presenceData = msg.presence || {};
 
@@ -265,6 +265,22 @@ function connectWS() {
         delete remoteEditors[msg.key];
         syncRemoteLocks();
         syncAllModuleBrokers();
+<<<<<<< HEAD
+=======
+
+        // Jika ini adalah module lock dari user lain, tampilkan toast "Selesai Edit" (auto-close)
+        if (msg.key.startsWith('__module_') && msg.editor && msg.editor.userId !== myId) {
+          const moduleId = msg.editor.moduleId || msg.key.replace('__module_', '');
+          const historyKey = `${msg.editor.userId}_${moduleId}`;
+          const editedParts = remoteEditHistory[historyKey] || [];
+          delete remoteEditHistory[historyKey];
+          const detail = formatEditedPartsDetail(editedParts);
+          const module = getModuleHeaders().find(header => header.moduleId === moduleId);
+          const moduleName = module?.name || 'modul ini';
+          showToast(`${msg.editor.name || 'Seseorang'} telah selesai mengedit ${moduleName}`, 'success', detail);
+        }
+
+>>>>>>> 15a9a94 (debug login dan notif buble)
       }
       return;
     }
@@ -366,10 +382,10 @@ function ensureDefaultModule() {
     PREDEFINED_MODULES.forEach((m, idx) => {
       const moduleId = `mod_preset_${idx}`;
       headers.push({
-        id:         `__${moduleId}`,
-        _type:      'moduleHeader',
+        id: `__${moduleId}`,
+        _type: 'moduleHeader',
         moduleId,
-        name:       m.name,
+        name: m.name,
         paletteIdx: m.paletteIdx,
       });
     });
@@ -502,10 +518,10 @@ function renderModules() {
 // ─────────────────────────────────────────────
 function createModuleCard(header, rowNo) {
   const moduleId = header.moduleId;
-  const palette  = getModulePalette(header);
-  const rows     = getModuleRows(moduleId);
-  const total    = rows.reduce((s, r) => s + (r.jumlah || 0), 0);
-  const hasData  = rows.length > 0;
+  const palette = getModulePalette(header);
+  const rows = getModuleRows(moduleId);
+  const total = rows.reduce((s, r) => s + (r.jumlah || 0), 0);
+  const hasData = rows.length > 0;
 
   const tr = document.createElement('tr');
   tr.className = 'module-row';
@@ -587,12 +603,12 @@ function createModuleCard(header, rowNo) {
 
 // Update info di baris tabel (rowcount + total + status) tanpa rebuild
 function updateCardInfo(moduleId) {
-  const rows    = getModuleRows(moduleId);
-  const total   = rows.reduce((s, r) => s + (r.jumlah || 0), 0);
+  const rows = getModuleRows(moduleId);
+  const total = rows.reduce((s, r) => s + (r.jumlah || 0), 0);
   const hasData = rows.length > 0;
 
-  const countEl  = document.querySelector(`[data-card-rowcount="${moduleId}"]`);
-  const totalEl  = document.querySelector(`[data-card-total="${moduleId}"]`);
+  const countEl = document.querySelector(`[data-card-rowcount="${moduleId}"]`);
+  const totalEl = document.querySelector(`[data-card-total="${moduleId}"]`);
   const statusEl = document.querySelector(`[data-card-status="${moduleId}"]`);
 
   if (countEl) countEl.textContent = `${rows.length} bahan`;
@@ -646,10 +662,7 @@ function closeModuleModal() {
   if (!openModuleId) return;
   const moduleId = openModuleId;
   wsSend({ type: 'saveState' }); // ✅ Simpan seluruh perubahan ke DB SQLite saat modal ditutup
-  if (changedModuleIds.delete(moduleId)) {
-    const module = getModuleHeaders().find(header => header.moduleId === moduleId);
-    wsSend({ type: 'action', text: `${myName} mengedit modul ${module?.name || 'ini'}` });
-  }
+  changedModuleIds.delete(moduleId); // ← toast "selesai mengedit" sudah ditangani via editorStop
   releaseModuleLock(moduleId);
   openModuleId = null;
   moduleModal.classList.remove('open');
@@ -678,10 +691,10 @@ function releaseModuleLock(moduleId) {
 // Render isi modal (header info + tbody)
 // ─────────────────────────────────────────────
 function refreshModal(moduleId) {
-  const header  = getModuleHeaders().find(h => h.moduleId === moduleId);
-  const rows    = getModuleRows(moduleId);
+  const header = getModuleHeaders().find(h => h.moduleId === moduleId);
+  const rows = getModuleRows(moduleId);
   const palette = getModulePalette(header || { paletteIdx: 0 });
-  const total   = rows.reduce((s, r) => s + (r.jumlah || 0), 0);
+  const total = rows.reduce((s, r) => s + (r.jumlah || 0), 0);
 
   // Header modal
   modalModuleName.textContent = header?.name || 'Modul';
@@ -707,7 +720,7 @@ function refreshModal(moduleId) {
 
 function updateModalTotal() {
   if (!openModuleId) return;
-  const rows  = getModuleRows(openModuleId);
+  const rows = getModuleRows(openModuleId);
   const total = rows.reduce((s, r) => s + (r.jumlah || 0), 0);
   modalTotal.textContent = formatCurrency(total);
   modalModuleMeta.textContent = `${rows.length} bahan yang dibutuhkan`;
@@ -723,13 +736,13 @@ function createRow(item) {
   tr.classList.add('row-new');
 
   const columns = [
-    { key: 'no',           editable: false, type: 'number',   align: 'center', cssClass: 'td-no' },
-    { key: 'uraian',       editable: true,  type: 'text',     align: 'left'   },
-    { key: 'volume',       editable: true,  type: 'number',   align: 'right'  },
-    { key: 'satuan',       editable: true,  type: 'text',     align: 'center' },
-    { key: 'harga_satuan', editable: true,  type: 'currency', align: 'right'  },
-    { key: 'jumlah',       editable: false, type: 'currency', align: 'right',  computed: true },
-    { key: 'keterangan',   editable: true,  type: 'text',     align: 'left'   },
+    { key: 'no', editable: false, type: 'number', align: 'center', cssClass: 'td-no' },
+    { key: 'uraian', editable: true, type: 'text', align: 'left' },
+    { key: 'volume', editable: true, type: 'number', align: 'right' },
+    { key: 'satuan', editable: true, type: 'text', align: 'center' },
+    { key: 'harga_satuan', editable: true, type: 'currency', align: 'right' },
+    { key: 'jumlah', editable: false, type: 'currency', align: 'right', computed: true },
+    { key: 'keterangan', editable: true, type: 'text', align: 'left' },
   ];
 
   for (const col of columns) {
@@ -744,18 +757,18 @@ function createRow(item) {
       div.className = 'cell-editable';
       div.contentEditable = 'true';
       div.spellcheck = false;
-      div.dataset.field    = col.key;
-      div.dataset.itemId   = item.id;
-      div.dataset.type     = col.type;
+      div.dataset.field = col.key;
+      div.dataset.itemId = item.id;
+      div.dataset.type = col.type;
       div.dataset.moduleId = item.moduleId;
 
       if (col.type === 'currency' || col.type === 'number') div.classList.add('cell-numeric');
       if (col.align === 'center') div.classList.add('cell-center');
 
       div.textContent = displayValue(item[col.key], col.type);
-      div.addEventListener('focus',   onCellFocus);
-      div.addEventListener('blur',    onCellBlur);
-      div.addEventListener('input',   onCellInput);
+      div.addEventListener('focus', onCellFocus);
+      div.addEventListener('blur', onCellBlur);
+      div.addEventListener('input', onCellInput);
       div.addEventListener('keydown', onCellKeydown);
 
       // Tampilkan lock jika sudah ada
@@ -890,7 +903,7 @@ function onCellKeydown(e) {
 function saveCell(cell) {
   // Membaca nilai dari DOM, memperbarui state, lalu mengirim perubahan ke server.
   const itemId = parseInt(cell.dataset.itemId);
-  const field  = cell.dataset.field;
+  const field = cell.dataset.field;
   let rawValue = cell.textContent.trim();
 
   if (cell.dataset.type === 'number' || cell.dataset.type === 'currency') {
@@ -906,7 +919,7 @@ function saveCell(cell) {
 
   const patch = { [field]: rawValue };
   if (field === 'volume' || field === 'harga_satuan') {
-    const vol  = field === 'volume' ? rawValue : item.volume;
+    const vol = field === 'volume' ? rawValue : item.volume;
     const hsat = field === 'harga_satuan' ? rawValue : item.harga_satuan;
     patch.jumlah = vol * hsat;
   }
@@ -914,6 +927,7 @@ function saveCell(cell) {
   // Object.assign menggabungkan property patch ke object item.
   Object.assign(item, patch);
   undoStack.push({
+    type: 'edit',
     itemId,
     moduleId: item.moduleId,
     field,
@@ -943,18 +957,36 @@ function updateUndoButton() {
 }
 
 function undoLastEdit() {
-  const lastEdit = undoStack.pop();
+  const lastAction = undoStack.pop();
   updateUndoButton();
-  if (!lastEdit) return;
+  if (!lastAction) return;
 
-  const item = tableData.find(row => row.id === lastEdit.itemId);
-  if (!item || item.moduleId !== openModuleId || item[lastEdit.field] !== lastEdit.after) {
+  // ── Undo penghapusan baris ──
+  if (lastAction.type === 'delete') {
+    if (lastAction.moduleId !== openModuleId || tableData.some(row => row.id === lastAction.item.id)) {
+      showToast('Undo dibatalkan karena modul sudah berubah', 'warn');
+      return;
+    }
+    const insertAt = Math.min(lastAction.index, tableData.length);
+    tableData.splice(insertAt, 0, lastAction.item);
+    getModuleRows(lastAction.moduleId).forEach((r, idx) => { r.no = idx + 1; });
+    refreshModal(lastAction.moduleId);
+    updateTotal();
+    updateCardInfo(lastAction.moduleId);
+    saveToStorage();
+    showToast('Bahan yang terhapus dikembalikan', 'success');
+    return;
+  }
+
+  // ── Undo edit teks/angka (logika lama) ──
+  const item = tableData.find(row => row.id === lastAction.itemId);
+  if (!item || item.moduleId !== openModuleId || item[lastAction.field] !== lastAction.after) {
     showToast('Undo dibatalkan karena bahan sudah berubah', 'warn');
     return;
   }
 
-  item[lastEdit.field] = lastEdit.before;
-  if (lastEdit.afterJumlah !== undefined) item.jumlah = lastEdit.beforeJumlah;
+  item[lastAction.field] = lastAction.before;
+  if (lastAction.afterJumlah !== undefined) item.jumlah = lastAction.beforeJumlah;
   patchRow(item);
   updateTotal();
   updateModalTotal();
@@ -963,7 +995,7 @@ function undoLastEdit() {
     type: 'rowUpdate',
     payload: item,
     persist: false,
-    editor: { key: `${item.id}_${lastEdit.field}`, userId: myId, name: myName, color: myColor, ts: Date.now() },
+    editor: { key: `${item.id}_${lastAction.field}`, userId: myId, name: myName, color: myColor, ts: Date.now() },
   });
   showToast('Perubahan terakhir dibatalkan', 'info');
 }
@@ -986,14 +1018,16 @@ function sendEditorPresence(cell, isEditing) {
     harga_satuan: 'Harga Satuan', keterangan: 'Keterangan',
   };
   wsSend(isEditing
-    ? { type: 'editorStart', editor: {
+    ? {
+      type: 'editorStart', editor: {
         key, userId: myId, name: myName, color: myColor, ts: Date.now(),
         moduleId: cell.dataset.moduleId,
         itemNo: item?.no || '?',
         field: cell.dataset.field,
         fieldLabel: fieldLabels[cell.dataset.field] || cell.dataset.field,
-      } }
-    : { type: 'editorStop',  key, userId: myId });
+      }
+    }
+    : { type: 'editorStop', key, userId: myId });
 }
 
 function rememberRemoteEdit(editor) {
@@ -1057,6 +1091,11 @@ function deleteRow(itemId) {
   const moduleId = item?.moduleId;
   if (!confirm('Hapus bahan ini?')) return;
 
+  // ← Simpan baris yang dihapus ke undoStack sebelum benar-benar dibuang
+  const deletedIndex = tableData.findIndex(i => i.id === itemId);
+  undoStack.push({ type: 'delete', item: { ...item }, index: deletedIndex, moduleId });
+  updateUndoButton();
+
   tableData = tableData.filter(i => i.id !== itemId);
   // Renumber dalam modul saja
   getModuleRows(moduleId).forEach((r, idx) => { r.no = idx + 1; });
@@ -1096,15 +1135,15 @@ function deleteRow(itemId) {
 
 function updateComputedJumlah(editedCell) {
   const itemId = parseInt(editedCell.dataset.itemId);
-  const item   = tableData.find(i => i.id === itemId);
+  const item = tableData.find(i => i.id === itemId);
   if (!item) return;
 
   const tr = document.querySelector(`tr[data-id="${itemId}"]`);
   if (!tr) return;
 
-  const vol  = parseFloat(tr.querySelector('[data-field="volume"]')?.textContent) || 0;
+  const vol = parseFloat(tr.querySelector('[data-field="volume"]')?.textContent) || 0;
   const hsat = parseFloat(tr.querySelector('[data-field="harga_satuan"]')?.textContent.replace(/[^0-9.-]/g, '')) || 0;
-  const jml  = vol * hsat;
+  const jml = vol * hsat;
 
   const jmlCell = tr.querySelector('[data-field="jumlah"] span');
   if (jmlCell) jmlCell.textContent = formatCurrency(jml);
@@ -1162,10 +1201,10 @@ patchRow = function (item) {
 
 function setSyncState(state) {
   syncDot.className = 'sync-dot';
-  if (state === 'ok')         { syncText.textContent = 'Terhubung'; }
-  else if (state === 'syncing')  { syncDot.classList.add('syncing'); syncText.textContent = 'Menyimpan...'; }
+  if (state === 'ok') { syncText.textContent = 'Terhubung'; }
+  else if (state === 'syncing') { syncDot.classList.add('syncing'); syncText.textContent = 'Menyimpan...'; }
   else if (state === 'connecting') { syncText.textContent = 'Menghubungkan...'; }
-  else if (state === 'offline')  { syncText.textContent = 'Terputus, menyambung ulang...'; }
+  else if (state === 'offline') { syncText.textContent = 'Terputus, menyambung ulang...'; }
 }
 
 function formatCurrency(val) {
@@ -1187,15 +1226,22 @@ function selectAllContent(el) {
   sel.addRange(range);
 }
 
-function showToast(msg, type = 'info') {
+function showToast(msg, type = 'info', detail = null) {
   const toast = document.createElement('div');
   toast.className = `toast toast-${type === 'error' ? 'err' : type}`;
-  toast.innerHTML = `<span>${msg}</span>`;
+  toast.innerHTML = `
+    <div class="toast-body">
+      <span class="toast-msg">${msg}</span>
+      ${detail ? `<small class="toast-detail">${detail}</small>` : ''}
+    </div>
+  `;
   toastCont.appendChild(toast);
+  // Toast dengan detail dikasih waktu baca lebih lama sebelum auto-close
+  const duration = detail ? 5000 : 3000;
   setTimeout(() => {
     toast.classList.add('toast-exit');
     setTimeout(() => toast.remove(), 200);
-  }, 3000);
+  }, duration);
 }
 
 function exportCSV() {
@@ -1204,7 +1250,7 @@ function exportCSV() {
   getModuleHeaders().forEach(h => { modMap[h.moduleId] = h.name; });
 
   const dataRows = tableData.filter(r => !r._type);
-  const headers  = ['No', 'Modul', 'Uraian Pekerjaan', 'Volume', 'Satuan', 'Harga Satuan', 'Jumlah', 'Keterangan'];
+  const headers = ['No', 'Modul', 'Uraian Pekerjaan', 'Volume', 'Satuan', 'Harga Satuan', 'Jumlah', 'Keterangan'];
   const rows = dataRows.map(item => [
     item.no,
     `"${modMap[item.moduleId] || item.moduleId}"`,
@@ -1212,9 +1258,9 @@ function exportCSV() {
     item.volume, item.satuan, item.harga_satuan, item.jumlah,
     `"${item.keterangan}"`
   ].join(','));
-  const csv  = [headers.join(','), ...rows].join('\n');
+  const csv = [headers.join(','), ...rows].join('\n');
   const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-  const a    = document.createElement('a');
+  const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = 'RAB_Estimasi.csv';
   a.click();
@@ -1258,11 +1304,11 @@ function isModuleLocked(moduleId) {
   if (modLock && modLock.userId !== myId) return modLock;
 
   // Cek cell-level lock (user lain sedang aktif di sel dalam modul ini)
-  const rows   = getModuleRows(moduleId);
+  const rows = getModuleRows(moduleId);
   const fields = ['uraian', 'volume', 'satuan', 'harga_satuan', 'keterangan'];
   for (const row of rows) {
     for (const field of fields) {
-      const key  = `${row.id}_${field}`;
+      const key = `${row.id}_${field}`;
       const lock = remoteEditors[key] || activeLocks[key];
       if (lock && lock.userId !== myId) return lock;
     }
@@ -1278,13 +1324,13 @@ function syncAllModuleBrokers() {
   for (const header of getModuleHeaders()) {
     const lockInfo = isModuleLocked(header.moduleId);
     if (lockInfo) showModuleBroker(header.moduleId, lockInfo);
-    else          hideModuleBroker(header.moduleId);
+    else hideModuleBroker(header.moduleId);
   }
 
   // Update tombol Edit: jika modul dikunci orang lain, tambah class 'locked'
   document.querySelectorAll('[data-module-edit-btn]').forEach(btn => {
     const moduleId = btn.dataset.moduleEditBtn;
-    const locked   = isModuleLocked(moduleId);
+    const locked = isModuleLocked(moduleId);
     if (locked) {
       btn.classList.add('locked');
       btn.title = `Dikunci oleh ${locked.name}`;
@@ -1330,6 +1376,38 @@ function showModuleBroker(moduleId, userInfo) {
 }
 
 // ─────────────────────────────────────────────
+<<<<<<< HEAD
+=======
+// Format detail bagian yang diubah jadi satu baris teks singkat,
+// dipakai sebagai subtext toast "Selesai Edit"
+// ─────────────────────────────────────────────
+function formatEditedPartsDetail(editedParts = []) {
+  if (!editedParts.length) return null;
+
+  const shortLabels = {
+    'Nama Bahan': 'Nama',
+    'Harga Satuan': 'Harga',
+    'Keterangan': 'Catatan',
+  };
+  const groupedParts = editedParts.reduce((groups, part) => {
+    const key = String(part.itemNo);
+    const group = groups.find(item => item.itemNo === key);
+    const label = shortLabels[part.fieldLabel] || part.fieldLabel;
+    if (group) {
+      if (!group.fields.includes(label)) group.fields.push(label);
+    } else {
+      groups.push({ itemNo: key, fields: [label] });
+    }
+    return groups;
+  }, []);
+
+  return groupedParts.length
+    ? `Diubah: ${groupedParts.slice(0, 3).map(part => `Bahan ${part.itemNo} (${part.fields.join(', ')})`).join('; ')}${groupedParts.length > 3 ? '; lainnya' : ''}`
+    : null;
+}
+
+// ─────────────────────────────────────────────
+>>>>>>> 15a9a94 (debug login dan notif buble)
 // Sembunyikan broker banner ketika modul sudah bebas
 // ─────────────────────────────────────────────
 function hideModuleBroker(moduleId) {
